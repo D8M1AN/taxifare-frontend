@@ -1,15 +1,14 @@
 from pathlib import Path
 
-import joblib
 import pandas as pd
 from fastapi import FastAPI
 
-from taxifare.pipeline import predict as predict_fare  # name from step 3
+from taxifare.pipeline import load_model, predict
 
 app = FastAPI()
 
 MODEL_PATH = Path(__file__).resolve().parents[1] / "models" / "linreg_pipeline.joblib"
-model = joblib.load(MODEL_PATH)  # load once at startup, not on every request
+model = load_model(MODEL_PATH)  # load once at startup
 
 
 @app.get("/")
@@ -18,7 +17,7 @@ def root():
 
 
 @app.get("/predict")
-def predict(
+def predict_endpoint(
     pickup_datetime: str,
     pickup_longitude: float,
     pickup_latitude: float,
@@ -33,5 +32,5 @@ def predict(
         columns=["pickup_datetime", "pickup_longitude", "pickup_latitude",
                  "dropoff_longitude", "dropoff_latitude", "passenger_count"],
     )
-    fare = predict_fare(model, X_pred)  # match your function's signature
-    return {"fare": float(fare)}
+    fare = predict(model, X_pred)
+    return {"fare": float(fare[0])}
